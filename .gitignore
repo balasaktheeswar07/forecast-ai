@@ -1,0 +1,22 @@
+# Node
+node_modules/
+dist/
+.env
+.env.local
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+env/
+venv/
+data/datasets/
+data/reports/
+data/models/
+data/campaigns.json
+
+# IDEs & System
+.DS_Store
+.vscode/
+.idea/
+thumbs.db

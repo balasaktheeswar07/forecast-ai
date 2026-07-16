@@ -1,0 +1,70 @@
+{
+  "2ce9f828-3ba4-4ece-b9b8-0facecaee77e": {
+    "filename": "sample_data.csv",
+    "storage_path": "data\\datasets\\2ce9f828-3ba4-4ece-b9b8-0facecaee77e.csv",
+    "channels": [
+      "Google Ads",
+      "Meta Ads"
+    ],
+    "summary": {
+      "total_spend": 3590.0,
+      "total_revenue": 11810.0,
+      "total_conversions": 113.25,
+      "overall_roas": 3.2896935933147633,
+      "channels_count": 2
+    },
+    "campaign_id": "2ce9f828-3ba4-4ece-b9b8-0facecaee77e",
+    "updated_at": "2026-07-11T12:58:03.142168"
+  },
+  "08cce278-e8da-4276-9770-ce7ac46fed2f": {
+    "filename": "sample_data.csv",
+    "storage_path": "data\\datasets\\08cce278-e8da-4276-9770-ce7ac46fed2f.csv",
+    "channels": [
+      "Google Ads",
+      "Meta Ads"
+    ],
+    "summary": {
+      "total_spend": 3590.0,
+      "total_revenue": 11810.0,
+      "total_conversions": 113.25,
+      "overall_roas": 3.2896935933147633,
+      "channels_count": 2
+    },
+    "campaign_id": "08cce278-e8da-4276-9770-ce7ac46fed2f",
+    "updated_at": "2026-07-16T12:08:00.713028"
+  },
+  "87fe2bd0-8dc0-4ae8-a498-586676d040de": {
+    "filename": "sample_data.csv",
+    "storage_path": "data\\datasets\\87fe2bd0-8dc0-4ae8-a498-586676d040de.csv",
+    "channels": [
+      "Google Ads",
+      "Meta Ads"
+    ],
+    "summary": {
+      "total_spend": 3590.0,
+      "total_revenue": 11810.0,
+      "total_conversions": 113.25,
+      "overall_roas": 3.2896935933147633,
+      "channels_count": 2
+    },
+    "campaign_id": "87fe2bd0-8dc0-4ae8-a498-586676d040de",
+    "updated_at": "2026-07-16T12:14:40.164336"
+  },
+  "bd6fc772-4fd6-452b-811d-06bd210359a1": {
+    "filename": "sample_data.csv",
+    "storage_path": "data\\datasets\\bd6fc772-4fd6-452b-811d-06bd210359a1.csv",
+    "channels": [
+      "Google Ads",
+      "Meta Ads"
+    ],
+    "summary": {
+      "total_spend": 3590.0,
+      "total_revenue": 11810.0,
+      "total_conversions": 113.25,
+      "overall_roas": 3.2896935933147633,
+      "channels_count": 2
+    },
+    "campaign_id": "bd6fc772-4fd6-452b-811d-06bd210359a1",
+    "updated_at": "2026-07-16T12:37:40.544167"
+  }
+}
