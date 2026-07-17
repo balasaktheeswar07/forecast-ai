@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from mangum import Mangum
+import pandas as pd
 
 from .aws_client import (
     init_resources,
@@ -43,7 +44,7 @@ app = FastAPI(title="AI Forecasting Assistant API")
 # Setup CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, restrict this to your frontend URL
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -56,7 +57,6 @@ handler = Mangum(app)
 LOCAL_CAMPAIGNS_JSON = os.path.join("data", "campaigns.json")
 
 # In-memory session store for current data to avoid S3 calls on every slider move
-# (Key: session_id, Value: DataFrame)
 _session_data_store: Dict[str, Any] = {}
 
 def get_campaign_metadata(campaign_id: str) -> dict:
@@ -263,7 +263,7 @@ def generate_forecast(req: ForecastRequest):
 
 class SimulateRequest(BaseModel):
     campaign_id: str
-    budgets: Dict[str, float] # Daily budget per channel
+    budgets: Dict[str, float]
 
 @app.post("/api/simulate")
 def run_simulation(req: SimulateRequest):
@@ -387,7 +387,7 @@ def get_insights(req: InsightRequest, api_key_header: Optional[str] = Header(Non
 class ChatRequest(BaseModel):
     campaign_id: str
     message: str
-    campaign_summary: dict # Brief stats for chatbot context
+    campaign_summary: dict
 
 @app.post("/api/chat")
 def chatbot_message(req: ChatRequest):
@@ -402,7 +402,7 @@ def chatbot_message(req: ChatRequest):
 
 class ReportRequest(BaseModel):
     campaign_id: str
-    forecast_summary: dict # Standard forecast aggregate metrics
+    forecast_summary: dict
     insights: str
 
 @app.post("/api/generate-report")
