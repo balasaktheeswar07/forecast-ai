@@ -1,9 +1,13 @@
 import os
 import logging
 import google.generativeai as genai
-from typing import Optional
+from typing import Optional, Dict, Any
+from .llm_engine import LLMOrchestrator
 
 logger = logging.getLogger("forecast-ai-ai")
+
+# Initialize LLM Orchestrator (FREE LLMs: Ollama, HuggingFace, then Gemini, then Heuristics)
+llm_orchestrator = LLMOrchestrator()
 
 def generate_strategic_insights(
     forecast_data: dict, 
@@ -11,12 +15,31 @@ def generate_strategic_insights(
     api_key: Optional[str] = None
 ) -> str:
     """
-    Generates strategic marketing recommendation text.
-    If api_key is present, uses the Gemini API. Otherwise, falls back to a 
-    highly customized, data-driven heuristic generator.
+    Generates strategic marketing recommendation text using best available LLM.
+    
+    Priority order (all FREE):
+    1. ✅ Ollama (Llama 3) - Local, offline, instant
+    2. ✅ HuggingFace - Local, free, no rate limits
+    3. ✅ Google Gemini - Free tier (60 req/min)
+    4. ✅ Heuristic Engine - 100% free, data-driven fallback
     """
     
-    # 1. Format the data into text for prompt/heuristics
+    try:
+        # Use LLM Orchestrator for intelligent routing
+        insights = llm_orchestrator.generate_strategic_insights(forecast_data, simulation_data)
+        logger.info("✅ Strategic insights generated successfully")
+        return insights
+        
+    except Exception as e:
+        logger.error(f"Insights generation error: {e}")
+        # Fallback to basic heuristics
+        return generate_basic_insights(forecast_data, simulation_data)
+
+
+def generate_basic_insights(forecast_data: dict, simulation_data: Optional[dict] = None) -> str:
+    """
+    Fallback: Simple data-driven insights without LLM
+    """
     hist_roas = forecast_data.get("historical_roas", 0.0)
     proj_roas = forecast_data.get("projected_roas", 0.0)
     hist_revenue = forecast_data.get("historical_revenue", 0.0)
@@ -25,70 +48,6 @@ def generate_strategic_insights(
     proj_spend = forecast_data.get("projected_spend", 0.0)
     
     channel_details = forecast_data.get("channels", {})
-    
-    # Check if we can use Gemini
-    effective_api_key = api_key or os.getenv("GEMINI_API_KEY")
-    
-    if effective_api_key:
-        try:
-            logger.info("Using Gemini API for strategic insights...")
-            genai.configure(api_key=effective_api_key)
-            # Use gemini-1.5-flash or gemini-2.5-flash. We use gemini-1.5-flash for compatibility.
-            model = genai.GenerativeModel("gemini-1.5-flash")
-            
-            prompt = f"""
-            You are an elite Chief Marketing Officer (CMO) and senior AI data analyst at a digital marketing agency.
-            Analyze the following campaign performance forecast and simulation data and provide client-ready, strategic insights.
-            
-            Historical Metrics (Past 30 days):
-            - Total Spend: ${hist_spend:,.2f}
-            - Total Revenue: ${hist_revenue:,.2f}
-            - Overall ROAS: {hist_roas:.2f}x
-            
-            Projected Metrics (Next 30 days - Baseline):
-            - Total Spend: ${proj_spend:,.2f}
-            - Total Revenue: ${proj_revenue:,.2f}
-            - Overall ROAS: {proj_roas:.2f}x
-            
-            Channel Performance Breakdown (Historical):
-            """
-            
-            for ch, metrics in channel_details.items():
-                prompt += f"\n- {ch}: Spend=${metrics.get('spend', 0):,.2f}, Revenue=${metrics.get('revenue', 0):,.2f}, ROAS={metrics.get('roas', 0):.2f}x, ConvRate={metrics.get('conv_rate', 0)*100:.2f}%"
-                
-            if simulation_data:
-                sim_summary = simulation_data.get("summary", {})
-                prompt += f"""
-                
-                User Budget Simulation Scenario:
-                - Simulated Total Spend: ${sim_summary.get('TotalSpend', 0):,.2f}
-                - Simulated Total Revenue: ${sim_summary.get('TotalRevenue', 0):,.2f}
-                - Simulated Total ROAS: {sim_summary.get('TotalROAS', 0):.2f}x
-                
-                Simulated Channel Allocations:
-                """
-                for ch, sim_metrics in simulation_data.get("channels", {}).items():
-                    prompt += f"\n  - {ch}: Budget Allocation=${sim_metrics.get('Spend', 0):,.2f}, Expected ROAS={sim_metrics.get('ROAS', 0):.2f}x, CPA=${sim_metrics.get('CPA', 0):,.2f}"
-            
-            prompt += """
-            
-            Generate a detailed report structured in clean Markdown. Include these exact sections:
-            1. ## 📈 Executive Summary: Highlight overall campaign health, trend shifts, and high-level forecast summary.
-            2. ## 🔍 Platform Insights: Audit each channel (Google, Meta, LinkedIn, TikTok etc.). Note which platforms are performing efficiently and which have high CPA.
-            3. ## ⚠️ Saturation & Risk Assessment: Estimate diminishing returns and flag platforms nearing saturation (where increasing spend yields smaller returns). Flag risk of high CPCs or low Conversions.
-            4. ## 🚀 Strategic Action Plan: Provide 3-4 bullet-point recommendations detailing exactly how to adjust budgets and optimize target audiences. Specify budget transfers (e.g. "Move $2,000 from Meta to Google Search").
-            
-            Keep the tone professional, commercial, analytical, and actionable. Do not use generic statements. Speak directly to agency managers.
-            """
-            
-            response = model.generate_content(prompt)
-            return response.text
-        except Exception as e:
-            logger.error(f"Gemini API execution failed: {e}. Falling back to heuristics.")
-            # Fall through to heuristics
-            
-    # Heuristic Engine
-    logger.info("Using local heuristic engine for strategic insights...")
     
     # Sort channels by ROAS to find best and worst
     channel_list = []
@@ -142,11 +101,11 @@ Overall portfolio efficiency remains healthy, but marginal returns are starting 
 1. **Diminishing Returns Alert**: 
 """
     if best_channel['name'] != "None" and best_channel['spend'] > 5000:
-        insights += f"- **{best_channel['name']}** is showing early indicators of audience fatigue. While ROAS remains high ({best_channel['roas']:.2f}x), incremental spend increases are expected to face a 15-20% drop-off in marginal conversions.\n"
+        insights += f"- **{best_channel['name']}** is showing early indicators of audience fatigue. While ROAS remains high ({best_channel['roas']:.2f}x), incremental spend increases are expected to face resistance.\n"
     else:
         insights += "- Low-budget channels currently show high elasticity; scaling them up should be done incrementally to monitor CPC changes.\n"
         
-    insights += f"""- **Cost-Per-Click Crises**: Competing advertisers in the industry are raising bid prices, exposing low-efficiency channels (like {worst_channel['name'] if worst_channel['name'] != "None" else "smaller platforms"}) to higher bounce rates and click inflation.
+    insights += f"""- **Cost-Per-Click Crises**: Competing advertisers in the industry are raising bid prices, exposing low-efficiency channels (like {worst_channel['name'] if worst_channel['name'] != 'None' else 'weaker performers'}) to margin compression.
 
 ## 🚀 Strategic Action Plan
 
@@ -188,7 +147,7 @@ def simulated_chatbot_response(user_query: str, campaign_summary: dict) -> str:
 Based on my analysis:
 1. **{best_channel}** is your most efficient channel with a ROAS of **{best_roas:.2f}x**. You should increase its share by at least 15%.
 2. You should scale down underperforming platforms that have a ROAS below 1.5x.
-3. Click the **"Optimize Allocation"** button in the Simulator tab to run our marginal utility optimizer, which mathematically calculates the ideal distribution of your daily ad spend to maximize overall portfolio revenue."""
+3. Click the **"Optimize Allocation"** button in the Simulator tab to run our marginal utility optimizer, which mathematically calculates the ideal distribution of your daily ad spend to maximize total ROI across all channels."""
 
     elif "forecast" in user_query_lower or "future" in user_query_lower or "next month" in user_query_lower:
         proj_rev = campaign_summary.get("projected_revenue", 0.0)
@@ -197,7 +156,7 @@ Based on my analysis:
 - **Total Revenue**: ${proj_rev:,.2f}
 - **Average ROAS**: {proj_roas:.2f}x
 
-The forecast shows steady performance, with a standard confidence interval of 95%. Google Ads is expected to lead traffic acquisition, while Meta Ads will capture high e-commerce conversion volume. You can check the exact day-by-day forecast charts on the **Dashboard**."""
+The forecast shows steady performance, with a standard confidence interval of 95%. Google Ads is expected to lead traffic acquisition, while Meta Ads will capture high e-commerce conversion volume. Monitor daily metrics closely."""
 
     elif "roas" in user_query_lower or "return" in user_query_lower:
         return f"""Your overall historical ROAS is **{hist_roas:.2f}x**. 
